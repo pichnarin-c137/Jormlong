@@ -30,7 +30,7 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -42,8 +42,9 @@ public class RecorderView extends VBox {
     private final Environment env;
     private final Stage stage;
 
+    private final CheckBox micCheck = new CheckBox("Record microphone");
     private final ComboBox<AudioSource> micBox = new ComboBox<>();
-    private final CheckBox systemAudioBox = new CheckBox("Also record system audio (mix mic + system output)");
+    private final CheckBox systemAudioBox = new CheckBox("Record system audio (what the computer plays)");
     private final Spinner<Integer> fpsSpinner = new Spinner<>(10, 120, 30);
     private final ComboBox<Quality> qualityBox = new ComboBox<>();
     private final TextField folderField = new TextField();
@@ -80,17 +81,28 @@ public class RecorderView extends VBox {
         Label subtitle = new Label("Recording via " + env.strategy().map(CaptureStrategy::displayName).orElse("?"));
         subtitle.getStyleClass().add("subtitle");
 
-        micBox.setItems(FXCollections.observableArrayList(env.audioSources()));
-        micBox.getSelectionModel().select(
-                env.audioSources().stream().filter(s -> !s.isMonitor()).findFirst()
-                        .orElse(env.audioSources().isEmpty() ? null : env.audioSources().get(0)));
+        List<AudioSource> mics = env.audioSources().stream().filter(s -> !s.isMonitor()).toList();
+        micBox.setItems(FXCollections.observableArrayList(mics));
+        if (!mics.isEmpty()) {
+            micBox.getSelectionModel().select(0);
+        }
         micBox.setMaxWidth(Double.MAX_VALUE);
+        micCheck.setSelected(!mics.isEmpty());
+        micCheck.setDisable(mics.isEmpty());
+        micBox.setDisable(mics.isEmpty());
+        micCheck.setOnAction(e -> micBox.setDisable(!micCheck.isSelected()));
+        micCheck.setTooltip(new Tooltip(
+                "Adds your voice from the microphone. Turn off to keep room noise out of the recording."));
 
-        Optional<AudioSource> monitor = env.audioSources().stream().filter(AudioSource::isMonitor).findFirst();
-        if (monitor.isEmpty()) {
+        boolean hasMonitor = env.audioSources().stream().anyMatch(AudioSource::isMonitor);
+        systemAudioBox.setSelected(hasMonitor);
+        if (!hasMonitor) {
             systemAudioBox.setDisable(true);
             systemAudioBox.setTooltip(new Tooltip(
                     "No system-output monitor source was found, so system audio cannot be captured."));
+        } else {
+            systemAudioBox.setTooltip(new Tooltip(
+                    "Captures the sound the computer plays (e.g. a video's own audio) digitally — no room noise."));
         }
 
         fpsSpinner.setEditable(true);
@@ -125,9 +137,12 @@ public class RecorderView extends VBox {
         HBox timerRow = new HBox(elapsedLabel);
         timerRow.setAlignment(Pos.CENTER);
 
+        HBox micRow = new HBox(10, micCheck, micBox);
+        micRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(micBox, Priority.ALWAYS);
+
         getChildren().addAll(title, subtitle,
-                labeled("Microphone", micBox),
-                systemAudioBox,
+                labeled("Audio", new VBox(8, systemAudioBox, micRow)),
                 labeled("Frames per second", fpsSpinner),
                 labeled("Quality", qualityBox),
                 labeled("Save recordings to", folderRow));
@@ -160,9 +175,8 @@ public class RecorderView extends VBox {
 
     private void startRecording() {
         CaptureStrategy strategy = env.strategy().orElse(null);
-        AudioSource mic = micBox.getValue();
-        if (strategy == null || mic == null) {
-            showError("Cannot record", "No capture strategy or microphone is available.");
+        if (strategy == null) {
+            showError("Cannot record", "No capture strategy is available.");
             return;
         }
 
@@ -170,14 +184,19 @@ public class RecorderView extends VBox {
         int width = evenFloor(screen.getBounds().getWidth() * screen.getOutputScaleX());
         int height = evenFloor(screen.getBounds().getHeight() * screen.getOutputScaleY());
         String display = System.getenv("DISPLAY");
-        String monitorSource = systemAudioBox.isSelected()
+        String mic = micCheck.isSelected() && micBox.getValue() != null
+                ? micBox.getValue().name() : null;
+        String monitor = systemAudioBox.isSelected()
                 ? env.audioSources().stream().filter(AudioSource::isMonitor)
                         .findFirst().map(AudioSource::name).orElse(null)
                 : null;
+        // one source records alone; two get amix'd; none → silent video
+        String audioPrimary = mic != null ? mic : monitor;
+        String audioSecondary = mic != null ? monitor : null;
 
         RecordingConfig cfg = new RecordingConfig(strategy,
                 display == null ? ":0" : display,
-                width, height, readFps(), qualityBox.getValue(), mic.name(), monitorSource,
+                width, height, readFps(), qualityBox.getValue(), audioPrimary, audioSecondary,
                 Path.of(folderField.getText()));
 
         session = new RecordingSession(cfg, message ->
@@ -254,7 +273,9 @@ public class RecorderView extends VBox {
     }
 
     private void setSettingsDisabled(boolean disabled) {
-        micBox.setDisable(disabled);
+        boolean noMic = micBox.getItems().isEmpty();
+        micCheck.setDisable(disabled || noMic);
+        micBox.setDisable(disabled || noMic || !micCheck.isSelected());
         systemAudioBox.setDisable(disabled
                 || env.audioSources().stream().noneMatch(AudioSource::isMonitor));
         fpsSpinner.setDisable(disabled);

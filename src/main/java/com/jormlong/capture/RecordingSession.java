@@ -64,9 +64,11 @@ public final class RecordingSession {
         videoProc = launch(videoCommand(), videoLog);
         watch(videoProc, cfg.strategy().displayName() + " (video)", videoLog);
 
-        Thread audioStarter = new Thread(this::startAudioWhenVideoBegins, "jormlong-audio-start");
-        audioStarter.setDaemon(true);
-        audioStarter.start();
+        if (cfg.micSource() != null) {
+            Thread audioStarter = new Thread(this::startAudioWhenVideoBegins, "jormlong-audio-start");
+            audioStarter.setDaemon(true);
+            audioStarter.start();
+        }
     }
 
     public boolean isRunning() {
