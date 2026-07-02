@@ -79,3 +79,8 @@ is shown in the error dialog.
 
 **FPS caveat.** `wl-screenrec` has no framerate flag; the FPS setting applies
 where the backend supports it (x11grab, gpu-screen-recorder, wf-recorder).
+
+**Quality.** The Quality dropdown maps to each backend's own knob — CRF
+23/18/15 for x11grab and wf-recorder, `-q medium`/`very_high`/`ultra` for
+gpu-screen-recorder, and 5/12/20 Mbps for wl-screenrec. The default (High)
+targets visual quality comparable to OBS defaults; Medium favors small files.

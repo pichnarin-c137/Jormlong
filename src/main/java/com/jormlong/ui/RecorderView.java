@@ -1,6 +1,7 @@
 package com.jormlong.ui;
 
 import com.jormlong.capture.CaptureStrategy;
+import com.jormlong.capture.Quality;
 import com.jormlong.capture.RecordingConfig;
 import com.jormlong.capture.RecordingSession;
 import com.jormlong.preflight.AudioSource;
@@ -44,6 +45,7 @@ public class RecorderView extends VBox {
     private final ComboBox<AudioSource> micBox = new ComboBox<>();
     private final CheckBox systemAudioBox = new CheckBox("Also record system audio (mix mic + system output)");
     private final Spinner<Integer> fpsSpinner = new Spinner<>(10, 120, 30);
+    private final ComboBox<Quality> qualityBox = new ComboBox<>();
     private final TextField folderField = new TextField();
     private final Button browseButton = new Button("Browse…");
     private final Button recordButton = new Button("● Start Recording");
@@ -95,6 +97,12 @@ public class RecorderView extends VBox {
         Tooltip.install(fpsSpinner, new Tooltip(
                 "Frames per second. Applies where the capture backend supports it (wl-screenrec has no fps flag)."));
 
+        qualityBox.setItems(FXCollections.observableArrayList(Quality.values()));
+        qualityBox.getSelectionModel().select(Quality.HIGH);
+        qualityBox.setMaxWidth(Double.MAX_VALUE);
+        Tooltip.install(qualityBox, new Tooltip(
+                "Higher quality means sharper text and cleaner motion, but larger files."));
+
         folderField.setEditable(false);
         folderField.setText(defaultVideosDir().toString());
         HBox.setHgrow(folderField, Priority.ALWAYS);
@@ -121,6 +129,7 @@ public class RecorderView extends VBox {
                 labeled("Microphone", micBox),
                 systemAudioBox,
                 labeled("Frames per second", fpsSpinner),
+                labeled("Quality", qualityBox),
                 labeled("Save recordings to", folderRow));
 
         if (env.strategy().map(CaptureStrategy::isWayland).orElse(false)) {
@@ -168,7 +177,7 @@ public class RecorderView extends VBox {
 
         RecordingConfig cfg = new RecordingConfig(strategy,
                 display == null ? ":0" : display,
-                width, height, readFps(), mic.name(), monitorSource,
+                width, height, readFps(), qualityBox.getValue(), mic.name(), monitorSource,
                 Path.of(folderField.getText()));
 
         session = new RecordingSession(cfg, message ->
@@ -249,6 +258,7 @@ public class RecorderView extends VBox {
         systemAudioBox.setDisable(disabled
                 || env.audioSources().stream().noneMatch(AudioSource::isMonitor));
         fpsSpinner.setDisable(disabled);
+        qualityBox.setDisable(disabled);
         browseButton.setDisable(disabled);
     }
 

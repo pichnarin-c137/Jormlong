@@ -13,6 +13,7 @@ public record RecordingConfig(
         int width,
         int height,
         int fps,
+        Quality quality,
         String micSource,
         String monitorSource,
         Path outputDir) {
