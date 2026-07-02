@@ -254,13 +254,38 @@ public final class RecordingSession {
                     "-framerate", Integer.toString(cfg.fps()),
                     "-video_size", cfg.width() + "x" + cfg.height(),
                     "-i", cfg.display(),
-                    "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+                    "-c:v", "libx264", "-preset", "veryfast",
+                    "-crf", x264Crf(), "-pix_fmt", "yuv420p",
                     out);
             case GPU_SCREEN_RECORDER -> List.of("gpu-screen-recorder",
-                    "-w", "portal", "-f", Integer.toString(cfg.fps()), "-c", "mp4", "-o", out);
-            case WL_SCREENREC -> List.of("wl-screenrec", "-f", out);
+                    "-w", "portal", "-f", Integer.toString(cfg.fps()),
+                    "-q", switch (cfg.quality()) {
+                        case MEDIUM -> "medium";
+                        case HIGH -> "very_high";
+                        case ULTRA -> "ultra";
+                    },
+                    "-c", "mp4", "-o", out);
+            case WL_SCREENREC -> {
+                List<String> cmd = new ArrayList<>(List.of("wl-screenrec"));
+                switch (cfg.quality()) {
+                    case MEDIUM -> { } // tool default (5 Mbps)
+                    case HIGH -> cmd.addAll(List.of("--bitrate", "12 MB"));
+                    case ULTRA -> cmd.addAll(List.of("--bitrate", "20 MB"));
+                }
+                cmd.addAll(List.of("-f", out));
+                yield cmd;
+            }
             case WF_RECORDER -> List.of("wf-recorder",
-                    "--framerate", Integer.toString(cfg.fps()), "-f", out);
+                    "--framerate", Integer.toString(cfg.fps()),
+                    "-p", "crf=" + x264Crf(), "-f", out);
+        };
+    }
+
+    private String x264Crf() {
+        return switch (cfg.quality()) {
+            case MEDIUM -> "23";
+            case HIGH -> "18";
+            case ULTRA -> "15";
         };
     }
 
