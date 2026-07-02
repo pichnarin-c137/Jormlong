@@ -1,0 +1,91 @@
+.screen {
+    -fx-background-color: #1e1f24;
+    -fx-font-family: "DejaVu Sans", sans-serif;
+}
+
+.title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f2f2f0;
+}
+
+.subtitle {
+    -fx-font-size: 13px;
+    -fx-text-fill: #9a9da6;
+}
+
+.label {
+    -fx-text-fill: #d8d9dd;
+}
+
+.check-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #f2f2f0;
+}
+
+.check-message {
+    -fx-text-fill: #b9bbc2;
+    -fx-font-size: 12px;
+}
+
+.dot-ok {
+    -fx-text-fill: #4caf50;
+    -fx-font-size: 14px;
+}
+
+.dot-fail {
+    -fx-text-fill: #e05252;
+    -fx-font-size: 14px;
+}
+
+.fix-field {
+    -fx-font-family: "DejaVu Sans Mono", monospace;
+    -fx-font-size: 12px;
+    -fx-background-color: #2b2d33;
+    -fx-text-fill: #ffb0b0;
+    -fx-background-radius: 4px;
+    -fx-border-color: #45474f;
+    -fx-border-radius: 4px;
+}
+
+.field-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9a9da6;
+}
+
+.portal-note {
+    -fx-text-fill: #c9a34c;
+    -fx-font-size: 12px;
+}
+
+.record-button {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 14px 24px;
+    -fx-background-color: #3a3d46;
+    -fx-text-fill: #f2f2f0;
+    -fx-background-radius: 8px;
+}
+
+.record-button:hover {
+    -fx-background-color: #454953;
+}
+
+.record-button.recording {
+    -fx-background-color: #c03434;
+}
+
+.record-button.recording:hover {
+    -fx-background-color: #d54040;
+}
+
+.elapsed {
+    -fx-font-family: "DejaVu Sans Mono", monospace;
+    -fx-font-size: 28px;
+    -fx-text-fill: #f2f2f0;
+}
+
+.status {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9a9da6;
+}
