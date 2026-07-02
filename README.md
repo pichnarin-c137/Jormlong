@@ -49,12 +49,17 @@ runtime. The result installs a menu entry under AudioVideo.
 ## Design notes
 
 **Two processes, muxed afterward.** Video goes to a hidden temp file via the
-capture backend; audio goes to a temp `.m4a` via `ffmpeg -f pulse` (with an
-`amix` filter when "also record system audio" is checked). On stop, both temps
-are muxed with `ffmpeg -c copy` — no re-encode — into
+capture backend; audio goes to a temp `.m4a` via `ffmpeg -f pulse`. On stop,
+both temps are muxed with `ffmpeg -c copy` — no re-encode — into
 `Recording_<timestamp>.mp4`, and the temps are deleted. This keeps the flow
-identical across all four backends and keeps the mic+system mixing logic in
-one place instead of per-backend audio flags.
+identical across all four backends and keeps the audio logic in one place
+instead of per-backend audio flags.
+
+**Audio selection.** System audio (the PulseAudio/PipeWire monitor source — a
+digital copy of what the computer plays, no room noise) and the microphone
+are independent toggles. System audio defaults on, so recording a video
+captures its own sound; enable the mic to add your voice (the two are mixed
+with `amix`); disable both for a silent recording.
 
 **A/V start alignment.** The audio process starts only once the video temp
 file becomes non-empty. This matters on Wayland portal backends: video only
